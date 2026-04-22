@@ -6,6 +6,18 @@ datasource db {
   provider = "postgresql"
 }
 
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      UserRole
+  createdAt DateTime @default(now())
+
+  spms      Spm[]     @relation("CreatedBy")
+  approvals Spm[]     @relation("ApprovedBy")
+}
+
 model Project {
   id         Int         @id @default(autoincrement())
   name       String
@@ -15,6 +27,30 @@ model Project {
   pekerjaans Pekerjaan[]
   transactions MaterialTransaction[]
   materialStocks ProjectMaterialStock[]
+  spms Spm[]
+  purchases Purchase[]
+}
+
+model Analysis {
+  id        Int      @id @default(autoincrement())
+  name      String   // contoh: cor beton
+  unit      String   // m3
+  createdAt DateTime @default(now())
+
+  items     AnalysisItem[]
+  rabItems   RabItem[]
+}
+
+model AnalysisItem {
+  id         Int   @id @default(autoincrement())
+  analysisId Int
+  materialId Int
+  type        AnalysisItemType   // 🔥 NEW
+  price       Float
+  coefficient Float
+
+  analysis   Analysis @relation(fields: [analysisId], references: [id])
+  material   Material @relation(fields: [materialId], references: [id])
 }
 
 model Pekerjaan {
@@ -30,7 +66,7 @@ model Pekerjaan {
 model RabItem {
   id          Int      @id @default(autoincrement())
   pekerjaanId Int
-  pekerjaan   Pekerjaan @relation(fields: [pekerjaanId], references: [id])
+  analysisId  Int?   
   name        String
   parentId    Int?
   level       Int     // 1 = A, 2 = I, 3 = 1
@@ -41,10 +77,13 @@ model RabItem {
   totalPrice  Float?
   createdAt   DateTime @default(now())
 
-  materialTransactions MaterialTransaction[]
-  materials   MaterialUsage[]
+  analysis    Analysis? @relation(fields: [analysisId], references: [id]) 
+  pekerjaan   Pekerjaan @relation(fields: [pekerjaanId], references: [id])
   parent      RabItem?   @relation("RabHierarchy", fields: [parentId], references: [id])
   children    RabItem[]  @relation("RabHierarchy")
+  
+  materialTransactions MaterialTransaction[]
+  materials   MaterialUsage[]
 }
 
 model Material {
@@ -55,6 +94,8 @@ model Material {
   usages       MaterialUsage[]
   transactions MaterialTransaction[]
   materialStocks ProjectMaterialStock[]
+  spmItems      SpmItem[]
+  analysisItems AnalysisItem[]
 }
 
 model MaterialUsage {
@@ -88,15 +129,97 @@ model MaterialTransaction {
   type        TransactionType
   note        String?
   createdAt   DateTime @default(now())
+  purchaseId  Int?
 
+  purchase   Purchase? @relation(fields: [purchaseId], references: [id])
   rabItem     RabItem? @relation(fields: [rabItemId], references: [id])
   material    Material @relation(fields: [materialId], references: [id])
   pekerjaan   Pekerjaan? @relation(fields: [pekerjaanId], references: [id])
   project     Project @relation(fields: [projectId], references: [id])
 }
 
+model Spm {
+  id           Int      @id @default(autoincrement())
+  spmNumber    String   @unique
+  projectId    Int
+  requestedById Int
+  approvedById Int?
+  note         String?
+  createdAt    DateTime  @default(now())
+  approvedAt   DateTime?
+
+  project      Project @relation(fields: [projectId], references: [id])
+  requestedBy  User    @relation("CreatedBy", fields: [requestedById], references: [id])
+  approvedBy   User?   @relation("ApprovedBy", fields: [approvedById], references: [id])
+
+  items        SpmItem[]
+  status       SpmStatus @default(PENDING)
+}
+
+model SpmItem {
+  id         Int   @id @default(autoincrement())
+  spmId      Int
+  materialId Int
+  quantity   Float
+
+  status     SpmItemStatus @default(REQUESTED)
+
+  spm        Spm      @relation(fields: [spmId], references: [id])
+  material   Material @relation(fields: [materialId], references: [id])
+}
+
+model Purchase {
+  id            Int      @id @default(autoincrement())
+  projectId     Int
+  vendor        String?
+  invoiceNumber String?
+  purchasedAt   DateTime?
+  totalAmount   Float?
+  createdAt     DateTime @default(now())
+
+  project       Project @relation(fields: [projectId], references: [id])
+  transactions  MaterialTransaction[]  // 🔥 detail item
+  receipts      PurchaseReceipt[]      // 🔥 file nota
+}
+
+model PurchaseReceipt {
+  id            Int      @id @default(autoincrement())
+  purchaseId    Int
+  fileUrl       String
+  fileName      String
+  uploadedAt    DateTime @default(now())
+
+  purchase      Purchase @relation(fields: [purchaseId], references: [id])
+}
+
+enum UserRole {
+  ADMIN
+  EMPLOYEE
+}
+
 enum TransactionType {
   PURCHASE
   USAGE
   ADJUSTMENT
+}
+
+enum SpmStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PARTIALLY_PURCHASED
+  COMPLETED
+}
+
+enum SpmItemStatus {
+  REQUESTED
+  APPROVED
+  PENDING_PURCHASE
+  PURCHASED
+}
+
+enum AnalysisItemType {
+  MATERIAL
+  LABOR
+  EQUIPMENT
 }

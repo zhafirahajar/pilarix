@@ -12,6 +12,23 @@ export class MaterialTransactionService {
   async create(dto: CreateMaterialTransactionDto) {
     const { materialId, projectId, quantity, type } = dto;
 
+    const isUsedInRAB = await this.prisma.materialUsage.findFirst({
+    where: {
+      materialId,
+      rabItem: {
+        pekerjaan: {
+          projectId,
+        },
+      },
+    },
+  });
+
+  if (!isUsedInRAB) {
+    throw new BadRequestException(
+      'Material is not planned in this project (not in RAB)',
+    );
+  }
+
     // 1. Ambil stock sekarang
     const stockRecord = await this.prisma.projectMaterialStock.findUnique({
       where: {

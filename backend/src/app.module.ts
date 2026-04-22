@@ -9,6 +9,7 @@ import { RabItemModule } from './rab-item/rab-item.module';
 import { PekerjaanModule } from './pekerjaan/pekerjaan.module';
 import { MaterialModule } from './material/material.module';
 import { MaterialTransactionModule } from './material-transaction/material-transaction.module';
+import { MaterialUsageModule } from './material-usage/material-usage.module';
 
 @Module({
   imports: [
@@ -21,6 +22,7 @@ import { MaterialTransactionModule } from './material-transaction/material-trans
     PekerjaanModule,
     MaterialModule,
     MaterialTransactionModule,
+    MaterialUsageModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
