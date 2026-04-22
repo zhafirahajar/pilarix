@@ -13,46 +13,38 @@ model Project {
   createdAt  DateTime    @default(now())
 
   pekerjaans Pekerjaan[]
+  transactions MaterialTransaction[]
+  materialStocks ProjectMaterialStock[]
 }
 
 model Pekerjaan {
   id        Int      @id @default(autoincrement())
   name      String   // contoh: POS, T.Staff
-
   projectId Int
-  project   Project  @relation(fields: [projectId], references: [id])
 
   rabItems  RabItem[]
   transactions MaterialTransaction[]
+  project   Project  @relation(fields: [projectId], references: [id])
 }
 
 model RabItem {
   id          Int      @id @default(autoincrement())
-
   pekerjaanId Int
   pekerjaan   Pekerjaan @relation(fields: [pekerjaanId], references: [id])
-
   name        String
-
-  // 🔥 TREE STRUCTURE
   parentId    Int?
-  parent      RabItem?   @relation("RabHierarchy", fields: [parentId], references: [id])
-  children    RabItem[]  @relation("RabHierarchy")
-
-  // 📊 HIERARCHY INFO
   level       Int     // 1 = A, 2 = I, 3 = 1
   order       Int     // urutan tampil
-
-  // 💰 ONLY FOR LEAF NODES
   volume      Float?
   unit        String?
   unitPrice   Float?
   totalPrice  Float?
-
-  materials   MaterialUsage[]
-  materialTransactions MaterialTransaction[]
-
   createdAt   DateTime @default(now())
+
+  materialTransactions MaterialTransaction[]
+  materials   MaterialUsage[]
+  parent      RabItem?   @relation("RabHierarchy", fields: [parentId], references: [id])
+  children    RabItem[]  @relation("RabHierarchy")
 }
 
 model Material {
@@ -62,39 +54,45 @@ model Material {
 
   usages       MaterialUsage[]
   transactions MaterialTransaction[]
+  materialStocks ProjectMaterialStock[]
 }
 
 model MaterialUsage {
   id          Int   @id @default(autoincrement())
-
   rabItemId   Int
   materialId  Int
-
   quantity    Float
 
   rabItem     RabItem   @relation(fields: [rabItemId], references: [id])
   material    Material  @relation(fields: [materialId], references: [id])
 }
 
+model ProjectMaterialStock {
+  id          Int @id @default(autoincrement())
+  projectId   Int
+  materialId  Int
+  stock       Float @default(0)
+
+  material    Material @relation(fields: [materialId], references: [id])
+  project     Project @relation(fields: [projectId], references: [id])
+  @@unique([projectId, materialId])
+}
+
 model MaterialTransaction {
   id          Int      @id @default(autoincrement())
-
   materialId  Int
-  material    Material @relation(fields: [materialId], references: [id])
-
-  pekerjaanId Int
-  pekerjaan   Pekerjaan @relation(fields: [pekerjaanId], references: [id])
-
-  // optional: link ke pekerjaan spesifik di RAB
+  projectId   Int
+  pekerjaanId Int?
   rabItemId   Int?
-  rabItem     RabItem? @relation(fields: [rabItemId], references: [id])
-
   quantity    Float
-
   type        TransactionType
   note        String?
-
   createdAt   DateTime @default(now())
+
+  rabItem     RabItem? @relation(fields: [rabItemId], references: [id])
+  material    Material @relation(fields: [materialId], references: [id])
+  pekerjaan   Pekerjaan? @relation(fields: [pekerjaanId], references: [id])
+  project     Project @relation(fields: [projectId], references: [id])
 }
 
 enum TransactionType {
