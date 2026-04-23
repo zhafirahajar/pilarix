@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateRabItemDto } from './dto/create-rab-item.dto';
 
@@ -7,14 +7,39 @@ export class RabItemService {
   constructor(private prisma: PrismaService) {}
 
   async create(dto: CreateRabItemDto) {
+    let name = dto.name;
+    let unit = dto.unit;
+    let unitPrice = dto.unitPrice ?? null;
+
+    if (dto.analysisId) {
+      const analysisInstance = await this.prisma.analysis.findUnique({
+        where: { id: dto.analysisId },
+        include: { items: true },
+      });
+
+      if (analysisInstance) {
+        name = analysisInstance.name;
+        unit = analysisInstance.unit;
+        unitPrice = analysisInstance.items.reduce(
+          (sum, item) => sum + item.price * item.coefficient,
+          0,
+        );
+      } else {
+        throw new NotFoundException(
+          `Analysis with id ${dto.analysisId} not found`,
+        );
+      }
+    }
+
     const totalPrice =
-      dto.volume && dto.unitPrice
-        ? dto.volume * dto.unitPrice
-        : null;
+      dto.volume && unitPrice ? dto.volume * unitPrice : null;
 
     return this.prisma.rabItem.create({
       data: {
         ...dto,
+        name,
+        unit,
+        unitPrice,
         totalPrice,
       },
     });

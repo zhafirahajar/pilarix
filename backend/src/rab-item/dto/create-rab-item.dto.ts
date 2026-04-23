@@ -4,6 +4,10 @@ export class CreateRabItemDto {
   @IsInt()
   pekerjaanId!: number;
 
+  @IsOptional()
+  @IsInt()
+  analysisId?: number;
+
   @IsString()
   name!: string;
 
