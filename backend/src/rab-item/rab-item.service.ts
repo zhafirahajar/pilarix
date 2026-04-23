@@ -30,7 +30,12 @@ export class RabItemService {
     return this.prisma.rabItem.create({
       data: {
         ...dto,
+        ...(analysisInstance && {
+          name: analysisInstance.name,
+          unit: analysisInstance.unit,
+        }),
         totalPrice,
+        unitPrice,
       },
     });
   }

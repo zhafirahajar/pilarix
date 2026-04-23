@@ -10,7 +10,10 @@ export class AnalysisService {
 
   async create(dto: CreateAnalysisDto) {
     return this.prisma.analysis.create({
-      data: dto,
+      data: { 
+        ...dto,
+        totalPrice: 0,
+       },
     });
   }
 
