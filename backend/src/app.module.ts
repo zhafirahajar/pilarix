@@ -10,6 +10,7 @@ import { PekerjaanModule } from './pekerjaan/pekerjaan.module';
 import { MaterialModule } from './material/material.module';
 import { MaterialTransactionModule } from './material-transaction/material-transaction.module';
 import { MaterialUsageModule } from './material-usage/material-usage.module';
+import { AnalysisModule } from './analysis/analysis.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { MaterialUsageModule } from './material-usage/material-usage.module';
     MaterialModule,
     MaterialTransactionModule,
     MaterialUsageModule,
+    AnalysisModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

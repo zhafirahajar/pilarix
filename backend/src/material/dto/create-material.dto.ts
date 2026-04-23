@@ -1,4 +1,5 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum } from 'class-validator';
+import { MaterialItemType } from '@prisma/client';
 
 export class CreateMaterialDto {
   @IsString()
@@ -8,4 +9,8 @@ export class CreateMaterialDto {
   @IsString()
   @IsNotEmpty()
   unit: string;
+
+  @IsEnum(MaterialItemType)
+  @IsNotEmpty()
+  type: MaterialItemType;
 }

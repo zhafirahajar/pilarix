@@ -4,6 +4,11 @@ export class CreateRabItemDto {
   @IsInt()
   pekerjaanId!: number;
 
+  @IsInt()
+  @IsOptional()
+  analysisId?: number;
+
+  @IsOptional()
   @IsString()
   name!: string;
 
@@ -17,7 +22,6 @@ export class CreateRabItemDto {
   @IsInt()
   order!: number;
 
-  @IsOptional()
   @IsNumber()
   volume?: number;
 

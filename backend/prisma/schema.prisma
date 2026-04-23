@@ -31,21 +31,36 @@ model Project {
   purchases Purchase[]
 }
 
+model Material {
+  id            Int    @id @default(autoincrement())
+  name          String
+  unit          String
+  type          MaterialItemType 
+
+
+  usages       MaterialUsage[]
+  transactions MaterialTransaction[]
+  materialStocks ProjectMaterialStock[]
+  spmItems      SpmItem[]
+  analysisItems AnalysisItem[]
+}
+
 model Analysis {
-  id        Int      @id @default(autoincrement())
-  name      String   // contoh: cor beton
-  unit      String   // m3
-  createdAt DateTime @default(now())
+  id          Int      @id @default(autoincrement())
+  name        String   // contoh: cor beton
+  unit        String   // m3
+  totalPrice  Float
+  createdAt   DateTime @default(now())
 
   items     AnalysisItem[]
   rabItems   RabItem[]
+  materialUsages MaterialUsage[]
 }
 
 model AnalysisItem {
   id         Int   @id @default(autoincrement())
   analysisId Int
   materialId Int
-  type        AnalysisItemType   // 🔥 NEW
   price       Float
   coefficient Float
 
@@ -54,9 +69,9 @@ model AnalysisItem {
 }
 
 model Pekerjaan {
+  projectId Int
   id        Int      @id @default(autoincrement())
   name      String   // contoh: POS, T.Staff
-  projectId Int
 
   rabItems  RabItem[]
   transactions MaterialTransaction[]
@@ -86,24 +101,14 @@ model RabItem {
   materials   MaterialUsage[]
 }
 
-model Material {
-  id        Int    @id @default(autoincrement())
-  name      String
-  unit      String
-
-  usages       MaterialUsage[]
-  transactions MaterialTransaction[]
-  materialStocks ProjectMaterialStock[]
-  spmItems      SpmItem[]
-  analysisItems AnalysisItem[]
-}
-
 model MaterialUsage {
   id          Int   @id @default(autoincrement())
   rabItemId   Int
+  analysisId  Int?   
   materialId  Int
-  quantity    Float
+  coefficient Float
 
+  analysis    Analysis? @relation(fields: [analysisId], references: [id]) 
   rabItem     RabItem   @relation(fields: [rabItemId], references: [id])
   material    Material  @relation(fields: [materialId], references: [id])
 }
@@ -197,6 +202,12 @@ enum UserRole {
   EMPLOYEE
 }
 
+enum materialType {
+  ALAT
+  BAHAN
+  UPAH
+}
+
 enum TransactionType {
   PURCHASE
   USAGE
@@ -218,7 +229,7 @@ enum SpmItemStatus {
   PURCHASED
 }
 
-enum AnalysisItemType {
+enum MaterialItemType {
   MATERIAL
   LABOR
   EQUIPMENT

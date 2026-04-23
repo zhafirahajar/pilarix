@@ -9,7 +9,6 @@ export class MaterialUsageService {
   constructor(private prisma: PrismaService) {}
 
   async create(rabItemId: number, dto: CreateMaterialUsageDto) {
-    // 🔒 pastikan rab item ada
     const rabItem = await this.prisma.rabItem.findUnique({
       where: { id: rabItemId },
     });
@@ -18,7 +17,6 @@ export class MaterialUsageService {
       throw new NotFoundException('RabItem not found');
     }
 
-    // 🔒 optional: prevent duplicate material
     const existing = await this.prisma.materialUsage.findFirst({
       where: {
         rabItemId,
@@ -36,7 +34,7 @@ export class MaterialUsageService {
       data: {
         rabItemId,
         materialId: dto.materialId,
-        quantity: dto.quantity,
+        coefficient: dto.coefficient
       },
       include: {
         material: true,

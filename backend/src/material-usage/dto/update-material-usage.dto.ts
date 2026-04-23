@@ -4,5 +4,5 @@ import { IsOptional, IsNumber } from 'class-validator';
 export class UpdateMaterialUsageDto {
   @IsOptional()
   @IsNumber()
-  quantity?: number;
+  coefficient?: number;
 }
