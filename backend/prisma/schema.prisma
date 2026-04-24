@@ -27,6 +27,7 @@ model Project {
   pekerjaans Pekerjaan[]
   transactions MaterialTransaction[]
   materialStocks ProjectMaterialStock[]
+  materialPrices ProjectMaterialPrice[]
   spms Spm[]
   purchases Purchase[]
 }
@@ -37,19 +38,19 @@ model Material {
   unit          String
   type          MaterialItemType 
 
-
   usages       MaterialUsage[]
   transactions MaterialTransaction[]
   materialStocks ProjectMaterialStock[]
+  materialPrices ProjectMaterialPrice[]
   spmItems      SpmItem[]
   analysisItems AnalysisItem[]
+  purchaseItems PurchaseItem[]
 }
 
 model Analysis {
   id          Int      @id @default(autoincrement())
   name        String   // contoh: cor beton
   unit        String   // m3
-  totalPrice  Float
   createdAt   DateTime @default(now())
 
   items     AnalysisItem[]
@@ -58,14 +59,25 @@ model Analysis {
 }
 
 model AnalysisItem {
-  id         Int   @id @default(autoincrement())
-  analysisId Int
-  materialId Int
-  price       Float
+  id          Int   @id @default(autoincrement())
+  analysisId  Int
+  materialId  Int
   coefficient Float
 
   analysis   Analysis @relation(fields: [analysisId], references: [id])
   material   Material @relation(fields: [materialId], references: [id])
+}
+
+model ProjectMaterialPrice {
+  id         Int   @id @default(autoincrement())
+  projectId  Int
+  materialId Int
+  price      Float
+
+  project   Project  @relation(fields: [projectId], references: [id])
+  material  Material @relation(fields: [materialId], references: [id])
+
+  @@unique([projectId, materialId])
 }
 
 model Pekerjaan {
@@ -73,9 +85,10 @@ model Pekerjaan {
   id        Int      @id @default(autoincrement())
   name      String   // contoh: POS, T.Staff
 
+  project   Project  @relation(fields: [projectId], references: [id])
   rabItems  RabItem[]
   transactions MaterialTransaction[]
-  project   Project  @relation(fields: [projectId], references: [id])
+  purchaseItems PurchaseItem[]
 }
 
 model RabItem {
@@ -99,18 +112,19 @@ model RabItem {
   
   materialTransactions MaterialTransaction[]
   materials   MaterialUsage[]
+  purchaseItems PurchaseItem[]
 }
 
 model MaterialUsage {
   id          Int   @id @default(autoincrement())
   rabItemId   Int
-  analysisId  Int?   
+  analysisId  Int?
   materialId  Int
-  coefficient Float
+  quantity    Float // total kebutuhan material untuk pekerjaan ini (volume * coefficient dari analysis item)
 
-  analysis    Analysis? @relation(fields: [analysisId], references: [id]) 
-  rabItem     RabItem   @relation(fields: [rabItemId], references: [id])
-  material    Material  @relation(fields: [materialId], references: [id])
+  analysis   Analysis? @relation(fields: [analysisId], references: [id])
+  rabItem    RabItem   @relation(fields: [rabItemId], references: [id])
+  material   Material  @relation(fields: [materialId], references: [id])
 }
 
 model ProjectMaterialStock {
@@ -122,25 +136,6 @@ model ProjectMaterialStock {
   material    Material @relation(fields: [materialId], references: [id])
   project     Project @relation(fields: [projectId], references: [id])
   @@unique([projectId, materialId])
-}
-
-model MaterialTransaction {
-  id          Int      @id @default(autoincrement())
-  materialId  Int
-  projectId   Int
-  pekerjaanId Int?
-  rabItemId   Int?
-  quantity    Float
-  type        TransactionType
-  note        String?
-  createdAt   DateTime @default(now())
-  purchaseId  Int?
-
-  purchase   Purchase? @relation(fields: [purchaseId], references: [id])
-  rabItem     RabItem? @relation(fields: [rabItemId], references: [id])
-  material    Material @relation(fields: [materialId], references: [id])
-  pekerjaan   Pekerjaan? @relation(fields: [pekerjaanId], references: [id])
-  project     Project @relation(fields: [projectId], references: [id])
 }
 
 model Spm {
@@ -183,8 +178,27 @@ model Purchase {
   createdAt     DateTime @default(now())
 
   project       Project @relation(fields: [projectId], references: [id])
-  transactions  MaterialTransaction[]  // 🔥 detail item
-  receipts      PurchaseReceipt[]      // 🔥 file nota
+
+  items         PurchaseItem[]     
+  receipts      PurchaseReceipt[] 
+}
+
+model PurchaseItem {
+  id           Int     @id @default(autoincrement())
+  purchaseId   Int
+  materialId   Int
+  quantity     Float
+  price        Float   // harga per unit
+  total        Float?  // optional snapshot (quantity * price)
+  pekerjaanId  Int?    
+  rabItemId    Int?    
+
+  purchase     Purchase @relation(fields: [purchaseId], references: [id])
+  material     Material @relation(fields: [materialId], references: [id])
+  pekerjaan    Pekerjaan? @relation(fields: [pekerjaanId], references: [id])
+  rabItem      RabItem?   @relation(fields: [rabItemId], references: [id])
+
+  transactions MaterialTransaction[]
 }
 
 model PurchaseReceipt {
@@ -197,21 +211,34 @@ model PurchaseReceipt {
   purchase      Purchase @relation(fields: [purchaseId], references: [id])
 }
 
+model MaterialTransaction {
+  id            Int      @id @default(autoincrement())
+  materialId    Int
+  projectId     Int
+  quantity      Float
+  type          TransactionType
+  note          String?
+  createdAt     DateTime @default(now())
+  purchaseItemId Int?
+  pekerjaanId   Int?
+  rabItemId     Int?
+
+  material      Material @relation(fields: [materialId], references: [id])
+  project       Project  @relation(fields: [projectId], references: [id])
+  purchaseItem  PurchaseItem? @relation(fields: [purchaseItemId], references: [id])
+  pekerjaan     Pekerjaan? @relation(fields: [pekerjaanId], references: [id])
+  rabItem       RabItem?   @relation(fields: [rabItemId], references: [id])
+}
+
 enum UserRole {
   ADMIN
   EMPLOYEE
 }
 
-enum materialType {
-  ALAT
-  BAHAN
-  UPAH
-}
-
 enum TransactionType {
   PURCHASE
   USAGE
-  ADJUSTMENT
+  ADJUSTMENT // e.g : berita acara kehilangan
 }
 
 enum SpmStatus {

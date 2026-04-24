@@ -11,6 +11,7 @@ import { MaterialModule } from './material/material.module';
 import { MaterialTransactionModule } from './material-transaction/material-transaction.module';
 import { MaterialUsageModule } from './material-usage/material-usage.module';
 import { AnalysisModule } from './analysis/analysis.module';
+import { MaterialPriceModule } from './material-price/material-price.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { AnalysisModule } from './analysis/analysis.module';
     MaterialTransactionModule,
     MaterialUsageModule,
     AnalysisModule,
+    MaterialPriceModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],

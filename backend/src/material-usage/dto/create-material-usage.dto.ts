@@ -13,7 +13,7 @@ export class CreateMaterialUsageDto {
   analysisItemId?: number;
 
   @IsNumber()
-  coefficient: number;
+  quantity: number;
 
   @IsString()
   unit: string;

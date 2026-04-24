@@ -6,6 +6,8 @@ import {
   Param,
   Delete,
   Patch,
+  Query,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { AnalysisService } from './analysis.service';
 import { CreateAnalysisDto } from './dto/create-analysis.dto';
@@ -68,7 +70,10 @@ export class AnalysisController {
   // =============================
 
   @Get(':id/calculate')
-  calculate(@Param('id') id: string) {
-    return this.service.calculateUnitPrice(Number(id));
+  calculateUnitPrice(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('projectId', ParseIntPipe) projectId: number,
+  ) {
+    return this.service.calculateUnitPrice(id, projectId);
   }
 }

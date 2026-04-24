@@ -30,13 +30,13 @@ export class MaterialUsageController {
     return this.service.findByRabItem(rabItemId);
   }
 
-  @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() dto: UpdateMaterialUsageDto,
-  ) {
-    return this.service.update(id, dto);
-  }
+  // @Patch(':id')
+  // update(
+  //   @Param('id', ParseIntPipe) id: number,
+  //   @Body() dto: UpdateMaterialUsageDto,
+  // ) {
+  //   return this.service.update(id, dto);
+  // }
 
   @Delete(':id')
   remove(@Param('id', ParseIntPipe) id: number) {

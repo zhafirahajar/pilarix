@@ -1,19 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MaterialPriceCalculatorService } from '../material-price/material-price-calculator.service';
 import { CreateAnalysisDto } from './dto/create-analysis.dto';
 import { UpdateAnalysisDto } from './dto/update-analysis.dto';
 import { CreateAnalysisItemDto } from './dto/create-analysis-item.dto';
 
 @Injectable()
 export class AnalysisService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private calculator: MaterialPriceCalculatorService,
+  ) {}
 
   async create(dto: CreateAnalysisDto) {
     return this.prisma.analysis.create({
-      data: { 
-        ...dto,
-        totalPrice: 0,
-       },
+      data: dto,
     });
   }
 
@@ -75,22 +76,25 @@ export class AnalysisService {
     if (!analysisInstance) {
       throw new NotFoundException('Analysis not found');
     }
-    
-    await this.prisma.analysisItem.create({
+
+    const newItem = await this.prisma.analysisItem.create({
       data: {
         analysisId,
         ...dto,
       },
-    });
-    
-    const totalPrice = await this.calculateUnitPrice(analysisInstance.id);
-
-    const newAnalysis = await this.prisma.analysis.update({
-      where: { id: analysisInstance.id },
-      data: { totalPrice: totalPrice.totalPrice },
+      include: {
+        material: true,
+      },
     });
 
-    return {newAnalysis, calculation: totalPrice}; ;
+    // Note: totalPrice calculation happens at project level (RabItem)
+    // when material prices are assigned, not at Analysis level
+
+    return {
+      message: 'Analysis item added successfully',
+      item: newItem,
+      note: 'Item prices will be calculated when assigned to RabItems with project material prices',
+    };
   }
 
   async removeItem(itemId: number) {
@@ -99,25 +103,11 @@ export class AnalysisService {
     });
   }
 
-  async calculateUnitPrice(analysisId: number) {
-    const analysis = await this.findOne(analysisId);
-
-    let total = 0;
-
-    for (const item of analysis.items) {
-      total += item.price * item.coefficient;
-    }
-
-    return {
-      analysisId,
-      unit: analysis.unit,
-      totalPrice: total,
-      breakdown: analysis.items.map((item) => ({
-        material: item.material.name,
-        price: item.price,
-        coefficient: item.coefficient,
-        subtotal: item.price * item.coefficient,
-      })),
-    };
+  /**
+   * Calculate unit price for an analysis in a specific project context
+   * Delegates to MaterialPriceCalculatorService to avoid duplication
+   */
+  async calculateUnitPrice(analysisId: number, projectId: number) {
+    return this.calculator.calculateUnitPrice(analysisId, projectId);
   }
 }

@@ -34,7 +34,7 @@ export class MaterialUsageService {
       data: {
         rabItemId,
         materialId: dto.materialId,
-        coefficient: dto.coefficient
+        quantity: dto.quantity,
       },
       include: {
         material: true,
@@ -60,12 +60,12 @@ export class MaterialUsageService {
     });
   }
 
-  async update(id: number, dto: UpdateMaterialUsageDto) {
-    return this.prisma.materialUsage.update({
-      where: { id },
-      data: dto,
-    });
-  }
+  // async update(id: number, dto: UpdateMaterialUsageDto) {
+  //   return this.prisma.materialUsage.update({
+  //     where: { id },
+  //     data: dto,
+  //   });
+  // }
 
   async remove(id: number) {
     return this.prisma.materialUsage.delete({

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Patch } from '@nestjs/common';
 import { RabItemService } from './rab-item.service';
 import { CreateRabItemDto } from './dto/create-rab-item.dto';
 
@@ -19,5 +19,10 @@ export class RabItemController {
   @Get('pekerjaan/:id')
   async findByPekerjaan(@Param('id') id: string) {
     return this.service.findByPekerjaan(Number(id));
+  }
+
+  @Patch(':id')
+  async update(@Param('id') id: string, @Body() dto: Partial<CreateRabItemDto>) {
+    return this.service.update(Number(id), dto);
   }
 }
